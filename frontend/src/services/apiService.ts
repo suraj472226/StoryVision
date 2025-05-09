@@ -1,3 +1,5 @@
+// frontend/src/services/apiService.ts
+
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api';
 
 interface StoryResponse {
@@ -12,7 +14,7 @@ interface ImageResponse {
 
 export const generateStory = async (keywords: string[], maxLength = 500): Promise<StoryResponse> => {
     try {
-        const response = await fetch(`${API_BASE}/story/generate-with-images`, {
+        const response = await fetch(`${API_BASE}/story/generate-story`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

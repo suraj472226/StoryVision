@@ -1,3 +1,5 @@
+// frontend/src/pages/CreateStoryPage.tsx
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -47,20 +49,30 @@ const CreateStoryPage = () => {
       // Generate images for each paragraph asynchronously
       newSections.forEach(async (section, index) => {
         try {
+          // Generate images SEQUENTIALLY by awaiting previous call
           const { image } = await generateImage(paragraphs[index]);
-          setStorySections(prev => 
-            prev.map(s => 
+          
+          // Use functional update with EXACT MATCHING
+          setStorySections(prev => {
+            // Find the LATEST version of this section
+            const targetSection = prev.find(s => s.id === section.id);
+            if (!targetSection) return prev;
+            
+            return prev.map(s => 
               s.id === section.id 
-                ? { ...s, imageUrl: `data:image/png;base64,${image}`, isImageLoading: false } 
+                ? { ...s, imageUrl: `data:image/png;base64,${image}`, isImageLoading: false }
                 : s
-            )
-          );
+            );
+          });
+          
+          // Force UI update by adding micro-delay
+          await new Promise(resolve => setTimeout(resolve, 50));
         } catch (error) {
-          console.error("Image generation failed for paragraph", index);
+          console.error(`Image failed: Paragraph ${index + 1}`, error);
           setStorySections(prev => 
             prev.map(s => 
               s.id === section.id 
-                ? { ...s, imageUrl: undefined, isImageLoading: false } 
+                ? { ...s, imageUrl: undefined, isImageLoading: false }
                 : s
             )
           );

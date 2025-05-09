@@ -1,3 +1,5 @@
+// frontend/src/components/StoryDisplay.tsx
+
 import React from 'react';
 import ImageCard from './ImageCard';
 import LoadingSpinner from './LoadingSpinner';
@@ -35,7 +37,7 @@ const StoryDisplay: React.FC<StoryDisplayProps> = ({ storySections, isLoading })
       {storySections.map((section, index) => (
         <div 
           key={section.id} 
-          className={`grid md:grid-cols-2 gap-8 items-center story-card animate-fade-in`}
+          className="grid md:grid-cols-2 gap-8 items-center"
           style={{ animationDelay: `${index * 0.2}s` }}
         >
           <div className="order-2 md:order-1">
@@ -44,14 +46,13 @@ const StoryDisplay: React.FC<StoryDisplayProps> = ({ storySections, isLoading })
             </p>
           </div>
           
-          <div className="order-1 md:order-2 page-wrapper">
-            <div className={`page ${index > 0 ? 'turned' : ''}`}>
-              <ImageCard 
-                imageUrl={section.imageUrl} 
-                alt={`Illustration for paragraph ${index + 1}`}
-                isLoading={section.isImageLoading} 
-              />
-            </div>
+          {/* SIMPLIFIED IMAGE CONTAINER */}
+          <div className="order-1 md:order-2">
+            <ImageCard 
+              imageUrl={section.imageUrl} 
+              alt={`Illustration for paragraph ${index + 1}`}
+              isLoading={section.isImageLoading} 
+            />
           </div>
         </div>
       ))}

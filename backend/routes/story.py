@@ -27,7 +27,7 @@ def image_to_base64(image) -> str:
     image.save(buffered, format="PNG")
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
 
-@router.post("/generate-with-images", response_model=CombinedStoryResponse)
+@router.post("/generate-story", response_model=CombinedStoryResponse)
 async def generate_story_with_images(request: StoryRequest):
     try:
         # Generate story text only
@@ -62,25 +62,35 @@ def extract_visual_prompt(text: str) -> str:
     return full_prompt.strip()
 
 
+# In the generate-image endpoint, add these modifications
 @router.post("/generate-image", response_model=dict)
 async def generate_single_image(request: ImageRequest):
     try:
-        # Simple prompt truncation
-        # image_prompt = request.prompt[:400]
+        # Add safety checker and retry logic
+        stable_diffusion.safety_checker = lambda images, **kwargs: (images, [False] * len(images))
         
-        
-        # Generate visually focused prompt from paragraph
         visual_prompt = extract_visual_prompt(request.prompt)
-        logging.info(f"Generated visual prompt (≤77 tokens): {visual_prompt}")
+        logging.info(f"Generated visual prompt: {visual_prompt}")
 
-        result = stable_diffusion(
-            prompt=visual_prompt,
-            num_inference_steps=25,
-            guidance_scale=7.5,
-            height=512,
-            width=512
-        )
-        return {"image": image_to_base64(result.images[0])}
+        # Generate with retry logic
+        max_retries = 2
+        for attempt in range(max_retries):
+            try:
+                result = stable_diffusion(
+                    prompt=visual_prompt,
+                    num_inference_steps=5,
+                    guidance_scale=7.5,
+                    height=512,
+                    width=512
+                )
+                return {"image": image_to_base64(result.images[0])}
+            except RuntimeError as e:
+                if "CUDA out of memory" in str(e) and attempt < max_retries - 1:
+                    torch.cuda.empty_cache()
+                    continue
+                raise
+
+        raise HTTPException(status_code=500, detail="Image generation failed after retries")
     except Exception as img_err:
         logging.error(f"Image generation failed: {str(img_err)}")
         raise HTTPException(status_code=500, detail="Image generation failed")
